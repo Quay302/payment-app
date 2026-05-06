@@ -7,6 +7,13 @@ app = Flask(__name__)
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 endpoint_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
 
+
+# --- Homepage route ---
+@app.route("/")
+def home():
+    return "Backend is running"
+
+
 # --- Payment Intent endpoint ---
 @app.route("/pay", methods=["POST"])
 def pay():
@@ -43,6 +50,7 @@ def webhook():
 
     except ValueError:
         return jsonify({"error": "Invalid payload"}), 400
+
     except stripe.error.SignatureVerificationError:
         return jsonify({"error": "Invalid signature"}), 400
 
