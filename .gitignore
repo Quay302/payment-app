@@ -22,3 +22,7 @@ Thumbs.db
 venv/
 app/venv/
 
+# Secrets
+*.pem
+.env
+terraform.tfvars

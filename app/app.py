@@ -1,19 +1,56 @@
+import os
+import stripe
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    return "Backend is running"
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
+# --- Payment Intent endpoint ---
 @app.route("/pay", methods=["POST"])
 def pay():
-    data = request.get_json()
+    data = request.json
+    amount = data["amount"]
 
-    if not data or "amount" not in data:
-        return jsonify({"error": "Invalid request"}), 400
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=int(amount * 100),
+            currency="usd",
+            automatic_payment_methods={"enabled": True}
+        )
 
-    return jsonify({"message": "received", "amount": data["amount"]})
+        return jsonify({
+            "clientSecret": intent.client_secret
+        })
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# --- Webhook endpoint (PRODUCTION CRITICAL) ---
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    payload = request.data
+    sig_header = request.headers.get("Stripe-Signature")
+
+    webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, webhook_secret
+        )
+
+    except ValueError:
+        return jsonify({"error": "Invalid payload"}), 400
+    except stripe.error.SignatureVerificationError:
+        return jsonify({"error": "Invalid signature"}), 400
+
+    # --- Handle events ---
+    if event["type"] == "payment_intent.succeeded":
+        payment_intent = event["data"]["object"]
+        print(f"Payment succeeded: {payment_intent['id']}")
+
+    elif event["type"] == "payment_intent.payment_failed":
+        print("Payment failed")
+
+    return jsonify({"status": "success"})
