@@ -1,9 +1,0 @@
-terraform outline
-
-Terraform
-   ↓
-AWS EC2 instance
-   ↓
-Security groups (open port 5000 / 80)
-   ↓
-Networking (public IP access)
