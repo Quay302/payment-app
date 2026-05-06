@@ -11,3 +11,10 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# IDE
+.vscode/
+
+# Python virtual environment
+.venv/
+venv/
