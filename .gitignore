@@ -3,6 +3,8 @@
 terraform/.terraform/
 *.tfstate
 *.tfstate.*
+terraform.tfvars
+*.tfvars
 
 # Python
 __pycache__/
@@ -20,6 +22,3 @@ Thumbs.db
 venv/
 app/venv/
 
-terraform/.terraform/
-
-terraform/.terraform.lock.hcl
