@@ -12,5 +12,3 @@ cd payment-app/app
 # install dependencies
 pip3 install flask
 
-# run app
-nohup python3 app.py > app.log 2>&1 &

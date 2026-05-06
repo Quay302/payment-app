@@ -29,11 +29,11 @@ resource "aws_security_group" "flask_sg" {
 
 resource "aws_instance" "flask_server" {
   ami           = "ami-0c02fb55956c7d316"
-  instance_type = "t3.micro"
+  instance_type = "t2.micro"
 
   vpc_security_group_ids = [aws_security_group.flask_sg.id]
 
-  user_data = file("${path.module}/../../../scripts/user_data.sh")
+  user_data = file("${path.module}/scripts/user_data.sh")
 
   tags = {
     Name = "FlaskServer"
