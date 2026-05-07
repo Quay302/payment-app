@@ -56,35 +56,30 @@ def pay():
     items = data.get("items", [])
 
     if not items:
-        return jsonify({"error": "Cart is empty"}), 400
+        return jsonify({"error": "empty cart"}), 400
 
-    try:
-        line_items = []
+    line_items = []
 
-        for item in items:
-            line_items.append({
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {
-                        "name": item["name"],
-                    },
-                    "unit_amount": int(item["price"] * 100),
+    for item in items:
+        line_items.append({
+            "price_data": {
+                "currency": "usd",
+                "product_data": {
+                    "name": item["name"]
                 },
-                "quantity": 1,
-            })
+                "unit_amount": int(item["price"] * 100)
+            },
+            "quantity": 1
+        })
 
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            mode="payment",
-            line_items=line_items,
-            success_url="https://acwebsite.click/success.html",
-            cancel_url="https://acwebsite.click/cancel.html"
-        )
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        line_items=line_items,
+        success_url="https://acwebsite.click/success.html",
+        cancel_url="https://acwebsite.click/cancel.html"
+    )
 
-        return jsonify({"url": session.url})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    return jsonify({"url": session.url})
 
 
 # -------------------------
@@ -104,35 +99,64 @@ def webhook():
     except Exception:
         return jsonify({"error": "invalid webhook"}), 400
 
-
-    if event["type"] == "payment_intent.succeeded":
-        pi = event["data"]["object"]
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
 
         conn = sqlite3.connect("payments.db")
         c = conn.cursor()
 
-        # avoid duplicates
-        c.execute("SELECT stripe_id FROM payments WHERE stripe_id = ?", (pi["id"],))
-        if c.fetchone():
-            return jsonify({"status": "duplicate ignored"})
-
         c.execute("""
-            INSERT INTO payments (stripe_id, amount, items, status, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO orders (
+                stripe_session_id,
+                amount,
+                items,
+                status,
+                created_at
+            ) VALUES (?, ?, ?, ?, ?)
         """, (
-            pi["id"],
-            pi["amount"] / 100,
-            str(pi.get("metadata", {}).get("items", "")),
-            "succeeded",
+            session["id"],
+            session["amount_total"] / 100,
+            str(session.get("metadata", {})),
+            "paid",
             datetime.utcnow().isoformat()
         ))
 
         conn.commit()
         conn.close()
 
-        print("Saved payment:", pi["id"])
+        print("ORDER SAVED:", session["id"])
 
     return jsonify({"status": "ok"})
+
+@app.route("/admin/orders")
+def admin_orders():
+    conn = sqlite3.connect("payments.db")
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM orders ORDER BY id DESC")
+    rows = c.fetchall()
+
+    conn.close()
+
+    html = "<h1>POS Dashboard</h1>"
+
+    total_revenue = 0
+
+    for r in rows:
+        total_revenue += r[2]
+        html += f"""
+        <div style='border:1px solid #ddd;padding:10px;margin:10px'>
+            <b>Order:</b> {r[0]} <br>
+            <b>Amount:</b> ${r[2]} <br>
+            <b>Status:</b> {r[4]} <br>
+            <b>Items:</b> {r[3]} <br>
+            <b>Date:</b> {r[5]}
+        </div>
+        """
+
+    html += f"<h2>Total Revenue: ${total_revenue}</h2>"
+
+    return html
 
 
 if __name__ == "__main__":
