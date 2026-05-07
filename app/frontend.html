@@ -1,85 +1,135 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Payment Test</title>
-
-  <!-- Stripe JS -->
+  <title>Country Club POS</title>
   <script src="https://js.stripe.com/v3/"></script>
 
   <style>
     body {
       font-family: Arial;
-      padding: 40px;
+      padding: 30px;
+      background: #f5f5f5;
     }
 
-    #card-element {
-      padding: 12px;
-      border: 1px solid #ccc;
-      max-width: 400px;
-      margin-bottom: 20px;
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      max-width: 600px;
+    }
+
+    .item {
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid #ddd;
+    }
+
+    .item:hover {
+      background: #eee;
     }
 
     button {
-      padding: 10px 20px;
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
       font-size: 16px;
-      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
     }
   </style>
 </head>
 
 <body>
 
-  <h2>Test Payment ($20)</h2>
+  <h2>⛳ Country Club POS System</h2>
 
-  <!-- Stripe Card Input goes here -->
-  <div id="card-element"></div>
+  <div class="grid">
 
-  <!-- Pay button -->
-  <button id="payBtn">Pay $20</button>
+    <div class="item" onclick="selectItem('Golf Balls', 5)">
+      🏌️ Golf Balls - $25
+    </div>
 
-  <p id="status"></p>
+    <div class="item" onclick="selectItem('Beer', 8)">
+      🍺 Beer - $8
+    </div>
 
+    <div class="item" onclick="selectItem('Soda', 3)">
+      🥤 Soda - $3
+    </div>
 
-<script>
-const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
+    <div class="item" onclick="selectItem('Snack Bar', 6)">
+      🍫 Snacks - $6
+    </div>
 
-const elements = stripe.elements();
-const card = elements.create("card");
-card.mount("#card-element");
+    <div class="item" onclick="selectItem('Tee Time Guest Fee', 40)">
+      ⛳ Tee Time Guest - $40
+    </div>
 
-document.getElementById("payBtn").onclick = async () => {
+  </div>
 
-  console.log("PAY CLICKED");
+  <h3 id="selected">Selected: None</h3>
 
-  const res = await fetch("https://acwebsite.click/pay", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ amount: 20 })
-  });
+  <button id="payBtn">Pay Now</button>
 
-  const data = await res.json();
-  console.log("PaymentIntent response:", data);
+  <div id="status"></div>
 
-  if (!data.clientSecret) {
-    alert("FAILED: no clientSecret");
-    return;
-  }
+  <script>
+    const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
 
-  // 🔥 THIS IS THE STEP YOU WERE MISSING
-  const result = await stripe.confirmCardPayment(data.clientSecret, {
-    payment_method: {
-      card: card
+    let selectedItem = null;
+    let selectedPrice = 0;
+
+    function selectItem(name, price) {
+      selectedItem = name;
+      selectedPrice = price;
+      document.getElementById("selected").innerText =
+        `Selected: ${name} - $${price}`;
     }
-  });
 
-  console.log("Stripe result:", result);
+    document.getElementById("payBtn").onclick = async () => {
 
-  if (result.error) {
-    alert("Payment failed: " + result.error.message);
-  } else {
-    alert("Payment status: " + result.paymentIntent.status);
-  }
-};
+      if (!selectedItem) {
+        alert("Select an item first");
+        return;
+      }
+
+      const status = document.getElementById("status");
+      status.innerText = "Processing...";
+
+      const res = await fetch("https://acwebsite.click/pay", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          amount: selectedPrice,
+          item: selectedItem
+        })
+      });
+
+      const data = await res.json();
+
+      const result = await stripe.confirmCardPayment(data.clientSecret, {
+        payment_method: {
+          card: {
+            number: "4242 4242 4242 4242",
+            exp_month: 12,
+            exp_year: 2030,
+            cvc: "123"
+          }
+        }
+      });
+
+      if (result.paymentIntent?.status === "succeeded") {
+        status.innerText = "✔ Payment Successful";
+      } else {
+        status.innerText = "❌ Payment Failed";
+      }
+
+      console.log(result);
+    };
   </script>
 
 </body>
