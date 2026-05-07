@@ -57,6 +57,9 @@ def pay():
     amount = data.get("amount", 0)
     items = data.get("items", [])
 
+    if amount <= 0:
+        return jsonify({"error": "Invalid amount"}), 400
+
     try:
         intent = stripe.PaymentIntent.create(
             amount=int(amount * 100),
@@ -72,6 +75,7 @@ def pay():
         })
 
     except Exception as e:
+        print("Stripe error:", str(e))
         return jsonify({"error": str(e)}), 400
 
 

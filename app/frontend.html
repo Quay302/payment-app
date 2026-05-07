@@ -65,11 +65,11 @@
   <div class="menu">
     <h3>Menu</h3>
 
-    <div class="item" onclick="addItem('Golf Balls', 25)">🏌️ Golf Balls - $25</div>
-    <div class="item" onclick="addItem('Beer', 8)">🍺 Beer - $8</div>
-    <div class="item" onclick="addItem('Soda', 3)">🥤 Soda - $3</div>
-    <div class="item" onclick="addItem('Snacks', 6)">🍫 Snacks - $6</div>
-    <div class="item" onclick="addItem('Tee Time Guest', 40)">⛳ Tee Time Guest - $40</div>
+    <div class="item" onclick="addItem('Golf Balls', 25)"> Golf Balls - $25</div>
+    <div class="item" onclick="addItem('Beer', 8)"> Beer - $8</div>
+    <div class="item" onclick="addItem('Soda', 3)"> Soda - $3</div>
+    <div class="item" onclick="addItem('Snacks', 6)"> Snacks - $6</div>
+    <div class="item" onclick="addItem('Tee Time Guest', 40)"> Tee Time Guest - $40</div>
 
   </div>
 
@@ -94,7 +94,7 @@
   let cart = [];
 
   function addItem(name, price) {
-    cart.push({name, price});
+    cart.push({ name, price });
     renderCart();
   }
 
@@ -127,7 +127,7 @@
 
     const total = cart.reduce((sum, i) => sum + i.price, 0);
 
-    document.getElementById("status").innerText = "Processing...";
+    document.getElementById("status").innerText = "Creating payment...";
 
     const res = await fetch("https://acwebsite.click/pay", {
       method: "POST",
@@ -140,31 +140,32 @@
 
     const data = await res.json();
 
-    if (!data.clientSecret) {
-      document.getElementById("status").innerText = "Error creating payment";
+    if (data.error) {
+      document.getElementById("status").innerText = "Backend error: " + data.error;
       return;
     }
 
-    const result = await stripe.confirmCardPayment(data.clientSecret, {
-      payment_method: {
-        card: {
-          number: "4242 4242 4242 4242",
-          exp_month: 12,
-          exp_year: 2030,
-          cvc: "123"
+    // THIS IS THE KEY FIX
+    const { error, paymentIntent } = await stripe.confirmCardPayment(
+      data.clientSecret,
+      {
+        payment_method: {
+          card: await stripe.elements().create("card").mount()
         }
       }
-    });
+    );
 
-    if (result.paymentIntent?.status === "succeeded") {
-      document.getElementById("status").innerText = "✔ Payment Successful";
-      cart = [];
-      renderCart();
-    } else {
-      document.getElementById("status").innerText = "❌ Payment Failed";
+    if (error) {
+      console.log(error);
+      document.getElementById("status").innerText = error.message;
+      return;
     }
 
-    console.log(result);
+    if (paymentIntent.status === "succeeded") {
+      document.getElementById("status").innerText = "Payment Successful";
+      cart = [];
+      renderCart();
+    }
   }
 </script>
 
