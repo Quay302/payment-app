@@ -7,15 +7,16 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# lock to your domain
+# Allow your domain
 CORS(app, origins=["https://acwebsite.click"])
 
+# Stripe keys
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 endpoint_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 
 # -------------------------
-# DATABASE INIT
+# DATABASE
 # -------------------------
 def init_db():
     conn = sqlite3.connect("payments.db")
@@ -25,8 +26,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS payments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             stripe_id TEXT UNIQUE,
-            item TEXT,
             amount REAL,
+            items TEXT,
             status TEXT,
             created_at TEXT
         )
@@ -47,19 +48,23 @@ def home():
 
 
 # -------------------------
-# CREATE PAYMENT
+# CREATE PAYMENT INTENT
 # -------------------------
 @app.route("/pay", methods=["POST"])
 def pay():
     data = request.json
-    amount = data["amount"]
-    item = data.get("item", "unknown")
+
+    amount = data.get("amount", 0)
+    items = data.get("items", [])
 
     try:
         intent = stripe.PaymentIntent.create(
             amount=int(amount * 100),
             currency="usd",
-            automatic_payment_methods={"enabled": True}
+            automatic_payment_methods={"enabled": True},
+            metadata={
+                "items": str(items)
+            }
         )
 
         return jsonify({
@@ -71,7 +76,7 @@ def pay():
 
 
 # -------------------------
-# WEBHOOK (STORE SALES)
+# WEBHOOK
 # -------------------------
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -94,24 +99,26 @@ def webhook():
         conn = sqlite3.connect("payments.db")
         c = conn.cursor()
 
-        # prevent duplicates
+        # avoid duplicates
         c.execute("SELECT stripe_id FROM payments WHERE stripe_id = ?", (pi["id"],))
         if c.fetchone():
             return jsonify({"status": "duplicate ignored"})
 
         c.execute("""
-            INSERT INTO payments (stripe_id, item, amount, status, created_at)
+            INSERT INTO payments (stripe_id, amount, items, status, created_at)
             VALUES (?, ?, ?, ?, ?)
         """, (
             pi["id"],
-            "POS SALE",
             pi["amount"] / 100,
+            str(pi.get("metadata", {}).get("items", "")),
             "succeeded",
             datetime.utcnow().isoformat()
         ))
 
         conn.commit()
         conn.close()
+
+        print("Saved payment:", pi["id"])
 
     return jsonify({"status": "ok"})
 

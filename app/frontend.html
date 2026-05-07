@@ -8,129 +8,165 @@
     body {
       font-family: Arial;
       padding: 30px;
-      background: #f5f5f5;
+      background: #f4f4f4;
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15px;
-      max-width: 600px;
+    .layout {
+      display: flex;
+      gap: 30px;
+    }
+
+    .menu, .cart {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 50%;
     }
 
     .item {
-      padding: 15px;
-      background: white;
-      border-radius: 10px;
-      cursor: pointer;
+      padding: 10px;
       border: 1px solid #ddd;
+      margin-bottom: 10px;
+      cursor: pointer;
+      border-radius: 8px;
     }
 
     .item:hover {
       background: #eee;
     }
 
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
     button {
-      margin-top: 20px;
-      padding: 10px;
       width: 100%;
+      padding: 12px;
+      margin-top: 10px;
       font-size: 16px;
     }
 
     #status {
-      margin-top: 20px;
+      margin-top: 10px;
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
 
-  <h2>⛳ Country Club POS System</h2>
+<h2>⛳ Country Club POS System</h2>
 
-  <div class="grid">
+<div class="layout">
 
-    <div class="item" onclick="selectItem('Golf Balls', 5)">
-      🏌️ Golf Balls - $25
-    </div>
+  <!-- MENU -->
+  <div class="menu">
+    <h3>Menu</h3>
 
-    <div class="item" onclick="selectItem('Beer', 8)">
-      🍺 Beer - $8
-    </div>
-
-    <div class="item" onclick="selectItem('Soda', 3)">
-      🥤 Soda - $3
-    </div>
-
-    <div class="item" onclick="selectItem('Snack Bar', 6)">
-      🍫 Snacks - $6
-    </div>
-
-    <div class="item" onclick="selectItem('Tee Time Guest Fee', 40)">
-      ⛳ Tee Time Guest - $40
-    </div>
+    <div class="item" onclick="addItem('Golf Balls', 25)">🏌️ Golf Balls - $25</div>
+    <div class="item" onclick="addItem('Beer', 8)">🍺 Beer - $8</div>
+    <div class="item" onclick="addItem('Soda', 3)">🥤 Soda - $3</div>
+    <div class="item" onclick="addItem('Snacks', 6)">🍫 Snacks - $6</div>
+    <div class="item" onclick="addItem('Tee Time Guest', 40)">⛳ Tee Time Guest - $40</div>
 
   </div>
 
-  <h3 id="selected">Selected: None</h3>
+  <!-- CART -->
+  <div class="cart">
+    <h3>Cart</h3>
 
-  <button id="payBtn">Pay Now</button>
+    <div id="cart"></div>
 
-  <div id="status"></div>
+    <h3>Total: $<span id="total">0</span></h3>
 
-  <script>
-    const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
+    <button onclick="checkout()">Checkout</button>
 
-    let selectedItem = null;
-    let selectedPrice = 0;
+    <div id="status"></div>
+  </div>
 
-    function selectItem(name, price) {
-      selectedItem = name;
-      selectedPrice = price;
-      document.getElementById("selected").innerText =
-        `Selected: ${name} - $${price}`;
+</div>
+
+<script>
+  const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
+
+  let cart = [];
+
+  function addItem(name, price) {
+    cart.push({name, price});
+    renderCart();
+  }
+
+  function renderCart() {
+    const cartDiv = document.getElementById("cart");
+    cartDiv.innerHTML = "";
+
+    let total = 0;
+
+    cart.forEach(item => {
+      total += item.price;
+
+      cartDiv.innerHTML += `
+        <div class="cart-item">
+          <span>${item.name}</span>
+          <span>$${item.price}</span>
+        </div>
+      `;
+    });
+
+    document.getElementById("total").innerText = total;
+  }
+
+  async function checkout() {
+
+    if (cart.length === 0) {
+      alert("Cart is empty");
+      return;
     }
 
-    document.getElementById("payBtn").onclick = async () => {
+    const total = cart.reduce((sum, i) => sum + i.price, 0);
 
-      if (!selectedItem) {
-        alert("Select an item first");
-        return;
-      }
+    document.getElementById("status").innerText = "Processing...";
 
-      const status = document.getElementById("status");
-      status.innerText = "Processing...";
+    const res = await fetch("https://acwebsite.click/pay", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        amount: total,
+        items: cart
+      })
+    });
 
-      const res = await fetch("https://acwebsite.click/pay", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          amount: selectedPrice,
-          item: selectedItem
-        })
-      });
+    const data = await res.json();
 
-      const data = await res.json();
+    if (!data.clientSecret) {
+      document.getElementById("status").innerText = "Error creating payment";
+      return;
+    }
 
-      const result = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: {
-          card: {
-            number: "4242 4242 4242 4242",
-            exp_month: 12,
-            exp_year: 2030,
-            cvc: "123"
-          }
+    const result = await stripe.confirmCardPayment(data.clientSecret, {
+      payment_method: {
+        card: {
+          number: "4242 4242 4242 4242",
+          exp_month: 12,
+          exp_year: 2030,
+          cvc: "123"
         }
-      });
-
-      if (result.paymentIntent?.status === "succeeded") {
-        status.innerText = "✔ Payment Successful";
-      } else {
-        status.innerText = "❌ Payment Failed";
       }
+    });
 
-      console.log(result);
-    };
-  </script>
+    if (result.paymentIntent?.status === "succeeded") {
+      document.getElementById("status").innerText = "✔ Payment Successful";
+      cart = [];
+      renderCart();
+    } else {
+      document.getElementById("status").innerText = "❌ Payment Failed";
+    }
+
+    console.log(result);
+  }
+</script>
 
 </body>
 </html>
