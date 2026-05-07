@@ -53,29 +53,37 @@ def home():
 @app.route("/pay", methods=["POST"])
 def pay():
     data = request.json
-
-    amount = data.get("amount", 0)
     items = data.get("items", [])
 
-    if amount <= 0:
-        return jsonify({"error": "Invalid amount"}), 400
+    if not items:
+        return jsonify({"error": "Cart is empty"}), 400
 
     try:
-        intent = stripe.PaymentIntent.create(
-            amount=int(amount * 100),
-            currency="usd",
-            automatic_payment_methods={"enabled": True},
-            metadata={
-                "items": str(items)
-            }
+        line_items = []
+
+        for item in items:
+            line_items.append({
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": item["name"],
+                    },
+                    "unit_amount": int(item["price"] * 100),
+                },
+                "quantity": 1,
+            })
+
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            mode="payment",
+            line_items=line_items,
+            success_url="https://acwebsite.click/success.html",
+            cancel_url="https://acwebsite.click/cancel.html"
         )
 
-        return jsonify({
-            "clientSecret": intent.client_secret
-        })
+        return jsonify({"url": session.url})
 
     except Exception as e:
-        print("Stripe error:", str(e))
         return jsonify({"error": str(e)}), 400
 
 

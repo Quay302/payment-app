@@ -57,7 +57,7 @@
 
 <body>
 
-<h2>⛳ Country Club POS System</h2>
+<h2> Country Club POS System</h2>
 
 <div class="layout">
 
@@ -125,15 +125,12 @@
       return;
     }
 
-    const total = cart.reduce((sum, i) => sum + i.price, 0);
-
-    document.getElementById("status").innerText = "Creating payment...";
+    document.getElementById("status").innerText = "Redirecting to checkout...";
 
     const res = await fetch("https://acwebsite.click/pay", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        amount: total,
         items: cart
       })
     });
@@ -141,31 +138,12 @@
     const data = await res.json();
 
     if (data.error) {
-      document.getElementById("status").innerText = "Backend error: " + data.error;
+      document.getElementById("status").innerText = data.error;
       return;
     }
 
-    // THIS IS THE KEY FIX
-    const { error, paymentIntent } = await stripe.confirmCardPayment(
-      data.clientSecret,
-      {
-        payment_method: {
-          card: await stripe.elements().create("card").mount()
-        }
-      }
-    );
-
-    if (error) {
-      console.log(error);
-      document.getElementById("status").innerText = error.message;
-      return;
-    }
-
-    if (paymentIntent.status === "succeeded") {
-      document.getElementById("status").innerText = "Payment Successful";
-      cart = [];
-      renderCart();
-    }
+    // 🚀 THIS IS THE SHOPIFY-LIKE EXPERIENCE
+    window.location.href = data.url;
   }
 </script>
 
