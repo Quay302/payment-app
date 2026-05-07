@@ -2,56 +2,105 @@
 <html>
 <head>
   <title>Payment Test</title>
+
+  <!-- Stripe JS -->
   <script src="https://js.stripe.com/v3/"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      padding: 40px;
+    }
+
+    #card-element {
+      padding: 12px;
+      border: 1px solid #ccc;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
+
 <body>
 
-  <h2>Test Payment</h2>
+  <h2>Test Payment ($20)</h2>
 
-  <div id="card-element" style="padding: 10px; border: 1px solid #ccc;"></div>
+  <!-- Stripe Card Input goes here -->
+  <div id="card-element"></div>
 
+  <!-- Pay button -->
   <button id="payBtn">Pay $20</button>
 
+  <p id="status"></p>
+
   <script>
+    // =========================
+    // 1. INIT STRIPE
+    // =========================
     const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
 
     const elements = stripe.elements();
     const card = elements.create("card");
+
+    // IMPORTANT: mount card input into page
     card.mount("#card-element");
 
+
+    // =========================
+    // 2. PAY BUTTON LOGIC
+    // =========================
     document.getElementById("payBtn").onclick = async () => {
 
-      const res = await fetch("https://acwebsite.click/pay", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          amount: 20
-        })
-      });
+      document.getElementById("status").innerText = "Creating payment...";
 
-      const data = await res.json();
+      try {
+        // STEP 1: call backend
+        const res = await fetch("https://acwebsite.click/pay", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            amount: 20
+          })
+        });
 
-      console.log(data);
+        const data = await res.json();
+        console.log("Backend response:", data);
 
-      if (!data.clientSecret) {
-        alert("Error creating PaymentIntent");
-        return;
-      }
-
-      const result = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: {
-          card: card
+        if (!data.clientSecret) {
+          document.getElementById("status").innerText = "Failed to create PaymentIntent";
+          return;
         }
-      });
 
-      console.log(result);
+        document.getElementById("status").innerText = "Confirming payment...";
 
-      if (result.error) {
-        alert(result.error.message);
-      } else {
-        alert("Payment status: " + result.paymentIntent.status);
+        // STEP 2: confirm payment with Stripe
+        const result = await stripe.confirmCardPayment(data.clientSecret, {
+          payment_method: {
+            card: card
+          }
+        });
+
+        console.log("Stripe result:", result);
+
+        // STEP 3: show result
+        if (result.error) {
+          document.getElementById("status").innerText = "Error: " + result.error.message;
+        } else {
+          document.getElementById("status").innerText =
+            "Payment " + result.paymentIntent.status;
+        }
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Request failed";
       }
     };
   </script>
