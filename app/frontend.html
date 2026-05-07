@@ -2,13 +2,23 @@
 <html>
 <head>
   <title>Payment Test</title>
+  <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
 
   <h2>Test Payment</h2>
+
+  <div id="card-element" style="padding: 10px; border: 1px solid #ccc;"></div>
+
   <button id="payBtn">Pay $20</button>
 
   <script>
+    const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
+
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
     document.getElementById("payBtn").onclick = async () => {
 
       const res = await fetch("https://acwebsite.click/pay", {
@@ -25,10 +35,23 @@
 
       console.log(data);
 
-      if (data.clientSecret) {
-        alert("PaymentIntent created successfully");
-      } else {
+      if (!data.clientSecret) {
         alert("Error creating PaymentIntent");
+        return;
+      }
+
+      const result = await stripe.confirmCardPayment(data.clientSecret, {
+        payment_method: {
+          card: card
+        }
+      });
+
+      console.log(result);
+
+      if (result.error) {
+        alert(result.error.message);
+      } else {
+        alert("Payment status: " + result.paymentIntent.status);
       }
     };
   </script>
