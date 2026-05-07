@@ -7,79 +7,85 @@
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       background: #f4f6f8;
     }
 
     header {
       background: #0b3d2e;
       color: white;
-      padding: 16px;
+      padding: 14px;
       font-size: 20px;
       font-weight: bold;
     }
 
-    .container {
+    .layout {
       display: flex;
       height: calc(100vh - 60px);
     }
 
-    .menu {
-      width: 70%;
-      padding: 20px;
-      overflow-y: auto;
-    }
-
-    .category {
-      margin-bottom: 30px;
-    }
-
-    .category h2 {
-      font-size: 18px;
-      border-bottom: 2px solid #ddd;
-      padding-bottom: 5px;
-      margin-bottom: 12px;
-    }
-
-    .item {
+    /* LEFT CATEGORY BAR */
+    .sidebar {
+      width: 180px;
       background: white;
-      padding: 14px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-      border: 1px solid #e0e0e0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      border-right: 1px solid #ddd;
+      padding: 10px;
     }
 
-    .item button {
+    .tab {
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #f1f1f1;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .tab.active {
       background: #0b3d2e;
       color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
     }
 
+    /* CENTER PRODUCTS */
+    .products {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .tile {
+      background: white;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.2s;
+    }
+
+    .tile:hover {
+      transform: scale(1.02);
+    }
+
+    /* RIGHT CART */
     .cart {
-      width: 30%;
+      width: 320px;
       background: white;
       border-left: 1px solid #ddd;
-      padding: 20px;
+      padding: 15px;
       display: flex;
       flex-direction: column;
-    }
-
-    .cart-items {
-      flex: 1;
-      overflow-y: auto;
     }
 
     .cart-item {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
-      font-size: 14px;
+      font-size: 13px;
+      margin-bottom: 6px;
     }
 
     .total {
@@ -95,111 +101,42 @@
       color: white;
       border: none;
       border-radius: 8px;
-      font-size: 16px;
       cursor: pointer;
     }
 
-    .status {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #555;
+    .search {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
 
 <body>
 
-<header>Country Club POS System</header>
+<header>Country Club POS (Shopify Style)</header>
 
-<div class="container">
+<div class="layout">
 
-  <!-- MENU -->
-  <div class="menu">
-
-    <!-- GOLF BALLS -->
-    <div class="category">
-      <h2>Golf Balls</h2>
-      <div class="item">Titleist Pro V1 - $55 <button onclick="addItem('Titleist Pro V1', 55)">Add</button></div>
-      <div class="item">Titleist AVX - $48 <button onclick="addItem('Titleist AVX', 48)">Add</button></div>
-      <div class="item">Callaway Chrome Soft - $50 <button onclick="addItem('Callaway Chrome Soft', 50)">Add</button></div>
-      <div class="item">TaylorMade TP5 - $52 <button onclick="addItem('TaylorMade TP5', 52)">Add</button></div>
-    </div>
-
-    <!-- ALCOHOL -->
-    <div class="category">
-      <h2>Alcoholic Beverages</h2>
-      <div class="item">Bud Light - $8 <button onclick="addItem('Bud Light', 8)">Add</button></div>
-      <div class="item">Coors Light - $8 <button onclick="addItem('Coors Light', 8)">Add</button></div>
-      <div class="item">Heineken - $9 <button onclick="addItem('Heineken', 9)">Add</button></div>
-      <div class="item">White Claw - $7 <button onclick="addItem('White Claw', 7)">Add</button></div>
-      <div class="item">Vodka Shooter - $10 <button onclick="addItem('Vodka Shooter', 10)">Add</button></div>
-      <div class="item">Whiskey Shooter - $10 <button onclick="addItem('Whiskey Shooter', 10)">Add</button></div>
-    </div>
-
-    <!-- SODAS -->
-    <div class="category">
-      <h2>Sodas & Drinks</h2>
-      <div class="item">Coke - $3 <button onclick="addItem('Coke', 3)">Add</button></div>
-      <div class="item">Diet Coke - $3 <button onclick="addItem('Diet Coke', 3)">Add</button></div>
-      <div class="item">Sprite - $3 <button onclick="addItem('Sprite', 3)">Add</button></div>
-      <div class="item">Ginger Ale - $3 <button onclick="addItem('Ginger Ale', 3)">Add</button></div>
-      <div class="item">Gatorade - $4 <button onclick="addItem('Gatorade', 4)">Add</button></div>
-    </div>
-
-    <!-- SNACKS -->
-    <div class="category">
-      <h2>Snacks</h2>
-      <div class="item">Chex Mix - $4 <button onclick="addItem('Chex Mix', 4)">Add</button></div>
-      <div class="item">Trail Mix - $5 <button onclick="addItem('Trail Mix', 5)">Add</button></div>
-      <div class="item">Nature Valley Bar - $3 <button onclick="addItem('Nature Valley Bar', 3)">Add</button></div>
-      <div class="item">Protein Bar - $5 <button onclick="addItem('Protein Bar', 5)">Add</button></div>
-      <div class="item">Apple - $2 <button onclick="addItem('Apple', 2)">Add</button></div>
-      <div class="item">Banana - $2 <button onclick="addItem('Banana', 2)">Add</button></div>
-    </div>
-
-    <!-- TEE TIMES -->
-    <div class="category">
-  <h2>Tee Times</h2>
-
-  <!-- 9 HOLES WALKING -->
-  <div class="item">
-    <div>
-      9 Holes (Walking) - $40
-    </div>
-    <button onclick="addItem('Tee Time - 9 Holes (Walking)', 40)">Add</button>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="tab active" onclick="setCategory('tees')">Tee Times</div>
+    <div class="tab" onclick="setCategory('balls')">Golf Balls</div>
+    <div class="tab" onclick="setCategory('drinks')">Drinks</div>
+    <div class="tab" onclick="setCategory('snacks')">Snacks</div>
   </div>
 
-  <!-- 9 HOLES WITH CART -->
-  <div class="item">
-    <div>
-      9 Holes (Cart Included) - $55
-    </div>
-    <button onclick="addItem('Tee Time - 9 Holes (Cart)', 55)">Add</button>
-  </div>
-
-  <!-- 18 HOLES WALKING -->
-  <div class="item">
-    <div>
-      18 Holes (Walking) - $70
-    </div>
-    <button onclick="addItem('Tee Time - 18 Holes (Walking)', 70)">Add</button>
-  </div>
-
-  <!-- 18 HOLES WITH CART -->
-  <div class="item">
-    <div>
-      18 Holes (Cart Included) - $85
-    </div>
-    <button onclick="addItem('Tee Time - 18 Holes (Cart)', 85)">Add</button>
-  </div>
-
-</div>
+  <!-- PRODUCTS -->
+  <div class="products" id="productGrid"></div>
 
   <!-- CART -->
   <div class="cart">
-    <h2>Cart</h2>
 
-    <div class="cart-items" id="cart"></div>
+    <h3>Cart</h3>
+
+    <div id="cartItems"></div>
 
     <div class="total">
       Total: $<span id="total">0</span>
@@ -207,29 +144,83 @@
 
     <button class="checkout" onclick="checkout()">Checkout</button>
 
-    <div class="status" id="status"></div>
   </div>
 
 </div>
 
 <script>
-let cart = [];
 
+let cart = [];
+let category = "tees";
+
+const data = {
+  balls: [
+    { name: "Titleist Pro V1", price: 55 },
+    { name: "Callaway Chrome Soft", price: 50 },
+    { name: "TaylorMade TP5", price: 52 }
+  ],
+
+  drinks: [
+    { name: "Beer", price: 8 },
+    { name: "Soda", price: 3 },
+    { name: "Seltzer", price: 6 }
+  ],
+
+  snacks: [
+    { name: "Protein Bar", price: 5 },
+    { name: "Chex Mix", price: 4 },
+    { name: "Fruit Cup", price: 3 }
+  ],
+
+  tees: [
+    { name: "9 Holes Walking", price: 40 },
+    { name: "9 Holes Cart", price: 55 },
+    { name: "18 Holes Walking", price: 70 },
+    { name: "18 Holes Cart", price: 85 }
+  ]
+};
+
+// -------- CATEGORY SWITCH --------
+function setCategory(cat) {
+  category = cat;
+
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  event.target.classList.add("active");
+
+  renderProducts();
+}
+
+// -------- PRODUCTS --------
+function renderProducts() {
+  const grid = document.getElementById("productGrid");
+  grid.innerHTML = "";
+
+  data[category].forEach(item => {
+    grid.innerHTML += `
+      <div class="tile" onclick="addItem('${item.name}', ${item.price})">
+        <b>${item.name}</b><br>
+        $${item.price}
+      </div>
+    `;
+  });
+}
+
+// -------- CART --------
 function addItem(name, price) {
   cart.push({ name, price });
   renderCart();
 }
 
 function renderCart() {
-  const cartDiv = document.getElementById("cart");
-  cartDiv.innerHTML = "";
+  const div = document.getElementById("cartItems");
+  div.innerHTML = "";
 
   let total = 0;
 
   cart.forEach(i => {
     total += i.price;
 
-    cartDiv.innerHTML += `
+    div.innerHTML += `
       <div class="cart-item">
         <span>${i.name}</span>
         <span>$${i.price}</span>
@@ -240,14 +231,13 @@ function renderCart() {
   document.getElementById("total").innerText = total;
 }
 
+// -------- CHECKOUT --------
 async function checkout() {
 
   if (cart.length === 0) {
     alert("Cart is empty");
     return;
   }
-
-  document.getElementById("status").innerText = "Redirecting to checkout...";
 
   const res = await fetch("https://acwebsite.click/pay", {
     method: "POST",
@@ -260,9 +250,13 @@ async function checkout() {
   if (data.url) {
     window.location.href = data.url;
   } else {
-    document.getElementById("status").innerText = "Checkout failed";
+    alert("Payment failed");
   }
 }
+
+// init
+renderProducts();
+
 </script>
 
 </body>
