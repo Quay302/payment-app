@@ -39,70 +39,47 @@
 
   <p id="status"></p>
 
-  <script>
-    // =========================
-    // 1. INIT STRIPE
-    // =========================
-    const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
 
-    const elements = stripe.elements();
-    const card = elements.create("card");
+<script>
+const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
 
-    // IMPORTANT: mount card input into page
-    card.mount("#card-element");
+const elements = stripe.elements();
+const card = elements.create("card");
+card.mount("#card-element");
 
+document.getElementById("payBtn").onclick = async () => {
 
-    // =========================
-    // 2. PAY BUTTON LOGIC
-    // =========================
-    document.getElementById("payBtn").onclick = async () => {
+  console.log("PAY CLICKED");
 
-      document.getElementById("status").innerText = "Creating payment...";
+  const res = await fetch("https://acwebsite.click/pay", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount: 20 })
+  });
 
-      try {
-        // STEP 1: call backend
-        const res = await fetch("https://acwebsite.click/pay", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            amount: 20
-          })
-        });
+  const data = await res.json();
+  console.log("PaymentIntent response:", data);
 
-        const data = await res.json();
-        console.log("Backend response:", data);
+  if (!data.clientSecret) {
+    alert("FAILED: no clientSecret");
+    return;
+  }
 
-        if (!data.clientSecret) {
-          document.getElementById("status").innerText = "Failed to create PaymentIntent";
-          return;
-        }
+  // 🔥 THIS IS THE STEP YOU WERE MISSING
+  const result = await stripe.confirmCardPayment(data.clientSecret, {
+    payment_method: {
+      card: card
+    }
+  });
 
-        document.getElementById("status").innerText = "Confirming payment...";
+  console.log("Stripe result:", result);
 
-        // STEP 2: confirm payment with Stripe
-        const result = await stripe.confirmCardPayment(data.clientSecret, {
-          payment_method: {
-            card: card
-          }
-        });
-
-        console.log("Stripe result:", result);
-
-        // STEP 3: show result
-        if (result.error) {
-          document.getElementById("status").innerText = "Error: " + result.error.message;
-        } else {
-          document.getElementById("status").innerText =
-            "Payment " + result.paymentIntent.status;
-        }
-
-      } catch (err) {
-        console.error(err);
-        document.getElementById("status").innerText = "Request failed";
-      }
-    };
+  if (result.error) {
+    alert("Payment failed: " + result.error.message);
+  } else {
+    alert("Payment status: " + result.paymentIntent.status);
+  }
+};
   </script>
 
 </body>
