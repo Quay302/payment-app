@@ -1,8 +1,11 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import stripe
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-CORS(app)
 
 app = Flask(__name__)
 CORS(app)
