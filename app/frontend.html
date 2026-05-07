@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>Payment Test</title>
-  <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
 
@@ -10,32 +9,27 @@
   <button id="payBtn">Pay $20</button>
 
   <script>
-    const stripe = Stripe("pk_test_51TUAfiACaedQXQHkvu0PYn6gR4E2PrmwMnqGGqNs3hF9dfAlC4JK63qJdSIfRxz1JW0nt7V2O5pxvFO0OVtHgdSh00sg8YtKnb");
-
     document.getElementById("payBtn").onclick = async () => {
+
       const res = await fetch("http://54.82.234.11:5000/pay", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ amount: 20 })
+        body: JSON.stringify({
+          amount: 20
+        })
       });
 
       const data = await res.json();
 
-      const result = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: {
-          card: {
-            number: "4242424242424242",
-            exp_month: 12,
-            exp_year: 2030,
-            cvc: "123"
-          }
-        }
-      });
+      console.log(data);
 
-      console.log(result);
-      alert("Payment attempted. Check console.");
+      if (data.clientSecret) {
+        alert("PaymentIntent created successfully");
+      } else {
+        alert("Error creating PaymentIntent");
+      }
     };
   </script>
 
